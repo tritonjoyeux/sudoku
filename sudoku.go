@@ -127,20 +127,44 @@ func checkCases(sudoku Sudoku) bool {
 func printSudoku(sudoku Sudoku) {
 	line := ""
 	for indexX, valueX := range sudoku.grid {
-		if(indexX == 3 || indexX == 6){
-			for i := 0; i < 14; i++ {
-    			line += "--"
-			}
+		if indexX == 0 {
+			line += "╔═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╗"
+			fmt.Println(line)
+			line = ""
+		}
+
+		if(indexX == 3 || indexX == 6){		
+    		line += "╠═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╣"
 			fmt.Println(line)
 			line = ""
 		}
 		for indexY, valueY := range valueX {
-			if(indexY == 3 || indexY == 6) {
-				line += "|"
+			if indexY == 0 {
+				line += "║"
 			}
-			line += " " + strconv.Itoa(valueY) + " "
+			if(indexY == 3 || indexY == 6) {
+				line += "║"
+			}
+
+			if valueY != 0 {
+				line += " " + strconv.Itoa(valueY) + " "
+			}else {
+				line += " ░ "
+			}
+
+			if (indexY != 2 && indexY != 5 && indexY != 8) {
+				line += "│"
+			}
 		}
+		line += "║"
 		fmt.Println(line)
 		line = ""
+		if (indexX != 2 && indexX != 5 && indexX != 8) {
+			line += "╠───┼───┼───╬───┼───┼───╬───┼───┼───╣"
+			fmt.Println(line)
+			line = ""
+		}
 	}
+	line += "╚═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╝"
+	fmt.Println(line)
 }
