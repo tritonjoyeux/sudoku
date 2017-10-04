@@ -36,7 +36,7 @@ func populateManualy(sudoku Sudoku) Sudoku {
 		{0,0,0/*|*/,8,0,3/*|*/,0,0,1},
 		{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
 		//---------------------------
-		{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
+		{0,6,0/*|*/,0,0,0/*|*/,0,8,0},
 		{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
 		{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
 	return sudoku
@@ -47,7 +47,10 @@ func populateManualy(sudoku Sudoku) Sudoku {
 func populateRandomly(sudoku Sudoku) Sudoku {
 	for indexX, valueX := range sudoku.grid {
 		for indexY, _ := range valueX {
-			sudoku.grid[indexX][indexY] = random(1, 9)
+			rand := random(1, 9)
+			if rand == 4 {
+				sudoku.grid[indexX][indexY] = random(1, 9)
+			}
 		}
 	}
 	return sudoku
@@ -101,19 +104,22 @@ func checkVerticaly(sudoku Sudoku) bool {
 }
 
 func checkCases(sudoku Sudoku) bool {
+	inc := 0
 	values := [9] int{0,0,0,0,0,0,0,0,0}
 	for y := 0; y < 9; y = y+3 {
 		for x := 0; x < 9; x = x+3 {
+			inc = 0
 			for i := 0; i < 3; i++ {
-				for j := 0; x < 3; x++ {
+				for j := 0; j < 3; j++ {
 					if sudoku.grid[y+i][x+j] != 0 {
 						for _, value := range values {
 							if value == sudoku.grid[y+i][x+j] {
 								return false
 							} 
 						}
-						values[(i+1)*(j+1)] = sudoku.grid[y+i][x+j]
+						values[inc] = sudoku.grid[y+i][x+j]
 					}
+					inc++
 				}
 			}
 			values = [9] int{0,0,0,0,0,0,0,0,0}	
