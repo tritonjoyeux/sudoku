@@ -14,9 +14,9 @@ func main() {
 	sudoku = populateManualy(sudoku)
 	printSudoku(sudoku)
 	if(isSudokuValid(sudoku)) {
-		fmt.Println("\nThis sudoku is valid\n")
+		fmt.Println("\n\033[32mThis sudoku is valid\033[0m\n")
 	}else {
-		fmt.Println("\nThis sudoku is not valid\n")
+		fmt.Println("\n\033[31mThis sudoku is not valid\033[0m\n")
 	}
 }
 
@@ -48,7 +48,7 @@ func populateRandomly(sudoku Sudoku) Sudoku {
 	for indexX, valueX := range sudoku.grid {
 		for indexY, _ := range valueX {
 			rand := random(1, 9)
-			if rand == 4 {
+			if (rand == 4) {
 				sudoku.grid[indexX][indexY] = random(1, 9)
 			}
 		}
