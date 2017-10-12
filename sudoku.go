@@ -26,10 +26,10 @@ func main() {
 		//			 position #must be 0#, back #must be false#,
 		//			 Sudoku #it'll not change#,
 		//			 timeLaps #time in Millisecond or -1 for no timelaps#)
-		solveSodoku(sudoku, coord, 0, false, sudoku, -1)
+		solveSodoku(sudoku, coord, 0, false, sudoku, 100)
 		elapsed := time.Since(start) // Time spend by solveSudoku
 
-		fmt.Println("\033[31mThe solver took", elapsed)
+		fmt.Println("The solver function took\033[31m", elapsed)
 		fmt.Println("\033[0m")
 	}
 }
@@ -45,14 +45,9 @@ type Coord struct {
 
 //-------SOLVE
 
-func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {
-	// TimeLaps
-	if(timeLaps != -1) {
-		fmt.Println("\033[H\033[2J")
-		printSudoku(sudoku)
-		time.Sleep(time.Duration(timeLaps) * time.Millisecond)	
-	}
-	
+func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {	
+	fmt.Println("\033[H\033[2J") // Clear
+	var wasBack = false // Use to print the sudoku
 	// Solver
 	if(position == -1){ // Impossible sudoku
 		printSudoku(sudokuBefore)
@@ -62,6 +57,7 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 	if(sudoku.grid[coord[position].y][coord[position].x] == 9 && back == true) { // If the lastest action was back and the value is 9
 		sudoku.grid[coord[position].y][coord[position].x] = 0
 		back = false
+		wasBack = true
 		position--
 	}else if(isSudokuValid(sudoku)){
 		var start = sudoku.grid[coord[position].y][coord[position].x] // This is the value of the cell
@@ -80,7 +76,7 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 					printSudoku(sudoku)
 					return // Stop
 				}
-				break // Stop the for
+				break // Stop the for because the sudoku is valid
 			}
 		}
 		if(check == 9 && !isSudokuValid(sudoku)){ // Means that the sudoku is not good : let's go back
@@ -91,7 +87,21 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 			position++	
 		}
 	}
-	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps) // Recursiv
+	// TimeLaps
+	if(timeLaps != -1) {
+		if(back == true){
+			printSudokuTimeLaps(sudoku, coord[position])
+		}else {
+			if(wasBack == true){
+				printSudokuTimeLaps(sudoku, coord[position])	
+			}else {
+				printSudokuTimeLaps(sudoku, coord[position-1])
+			}
+		}
+		time.Sleep(time.Duration(timeLaps) * time.Millisecond)	
+	}
+	// Recursiv
+	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps) 
 }
 
 //-------COORD
@@ -111,6 +121,7 @@ func getChangeableCoordinates(sudoku Sudoku) []Coord {
 //-------MANUALY
 
 func populateManualy(sudoku Sudoku) Sudoku {
+	// Good
 	sudoku.grid =  [9][9] int{
 		{5,3,0/*|*/,0,7,0/*|*/,0,0,0},
 		{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
@@ -123,6 +134,35 @@ func populateManualy(sudoku Sudoku) Sudoku {
 		{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
 		{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
 		{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
+
+	// Not good
+	//sudoku.grid =  [9][9] int{ 
+	//	{5,3,0/*|*/,0,7,0/*|*/,0,0,7},
+	//	{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
+	//	{0,9,8/*|*/,0,0,0/*|*/,0,6,0},
+	//	//---------------------------
+	//	{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
+	//	{4,0,0/*|*/,8,0,3/*|*/,0,0,1},
+	//	{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
+	//	//---------------------------
+	//	{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
+	//	{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
+	//	{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
+
+	// Impossible
+	//sudoku.grid =  [9][9] int{ 
+	//	{5,3,0/*|*/,0,7,0/*|*/,0,0,0},
+	//	{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
+	//	{4,9,8/*|*/,0,0,0/*|*/,0,6,0},
+	//	//---------------------------
+	//	{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
+	//	{0,0,0/*|*/,8,0,3/*|*/,0,0,1},
+	//	{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
+	//	//---------------------------
+	//	{0,6,0/*|*/,0,0,0/*|*/,0,8,0},
+	//	{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
+	//	{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
+
 	return sudoku
 }
 
@@ -246,40 +286,92 @@ func checkCases(sudoku Sudoku) bool {
 
 func printSudoku(sudoku Sudoku) {
 	line := ""
-	for indexX, valueX := range sudoku.grid {
-		if indexX == 0 {
+	for indexY, valueY := range sudoku.grid {
+		if indexY == 0 {
 			line += "╔═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╗"
 			fmt.Println(line)
 			line = ""
 		}
 
-		if(indexX == 3 || indexX == 6){		
+		if(indexY == 3 || indexY == 6){		
     		line += "╠═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╣"
 			fmt.Println(line)
 			line = ""
 		}
-		for indexY, valueY := range valueX {
-			if indexY == 0 {
+		for indexX, valueX := range valueY {
+			if indexX == 0 {
 				line += "║"
 			}
-			if(indexY == 3 || indexY == 6) {
+			if(indexX == 3 || indexX == 6) {
 				line += "║"
 			}
 
-			if valueY != 0 {
-				line += " " + strconv.Itoa(valueY) + " "
+			if valueX != 0 {
+				line += " " + strconv.Itoa(valueX) + " "
 			}else {
 				line += " ░ "
 			}
 
-			if (indexY != 2 && indexY != 5 && indexY != 8) {
+			if (indexX != 2 && indexX != 5 && indexX != 8) {
 				line += "│"
 			}
 		}
 		line += "║"
 		fmt.Println(line)
 		line = ""
-		if (indexX != 2 && indexX != 5 && indexX != 8) {
+		if (indexY != 2 && indexY != 5 && indexY != 8) {
+			line += "╠───┼───┼───╬───┼───┼───╬───┼───┼───╣"
+			fmt.Println(line)
+			line = ""
+		}
+	}
+	line += "╚═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╝"
+	fmt.Println(line)
+}
+
+
+func printSudokuTimeLaps(sudoku Sudoku, coord Coord) {
+	line := ""
+	for indexY, valueY := range sudoku.grid {
+		if indexY == 0 {
+			line += "╔═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╗"
+			fmt.Println(line)
+			line = ""
+		}
+
+		if(indexY == 3 || indexY == 6){		
+    		line += "╠═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╣"
+			fmt.Println(line)
+			line = ""
+		}
+		for indexX, valueX := range valueY {
+			if indexX == 0 {
+				line += "║"
+			}
+			if(indexX == 3 || indexX == 6) {
+				line += "║"
+			}
+
+			if valueX != 0 {
+				line += " "
+				if(indexY == coord.y && indexX == coord.x){
+					line += "\033[31m" + strconv.Itoa(valueX) + "\033[0m"
+				}else {
+					line += strconv.Itoa(valueX)
+				}
+				line += " "
+			}else {
+				line += " ░ "
+			}
+
+			if (indexX != 2 && indexX != 5 && indexX != 8) {
+				line += "│"
+			}
+		}
+		line += "║"
+		fmt.Println(line)
+		line = ""
+		if (indexY != 2 && indexY != 5 && indexY != 8) {
 			line += "╠───┼───┼───╬───┼───┼───╬───┼───┼───╣"
 			fmt.Println(line)
 			line = ""
