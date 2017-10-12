@@ -15,7 +15,7 @@ func main() {
 	sudoku = populateManualy(sudoku) // You can change it in the func populateManualy
 
 	if(!isSudokuValid(sudoku)) { 
-		printSudoku(sudoku)
+		printSudoku(sudoku, Coord{100,100})
 		fmt.Println("\033[31mThe sudoku is not valid\033[0m")		
 	}else {
 		var coord = getChangeableCoordinates(sudoku) // Search all 0 in the grid
@@ -26,7 +26,7 @@ func main() {
 		//			 position #must be 0#, back #must be false#,
 		//			 Sudoku #it'll not change#,
 		//			 timeLaps #time in Millisecond or -1 for no timelaps#)
-		solveSodoku(sudoku, coord, 0, false, sudoku, 100)
+		solveSodoku(sudoku, coord, 0, false, sudoku, -1)
 		elapsed := time.Since(start) // Time spend by solveSudoku
 
 		fmt.Println("The solver function took\033[31m", elapsed)
@@ -50,7 +50,7 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 	var wasBack = false // Use to print the sudoku
 	// Solver
 	if(position == -1){ // Impossible sudoku
-		printSudoku(sudokuBefore)
+		printSudoku(sudokuBefore, Coord{100,100})
 		fmt.Println("\n\033[31mThere is no solution for this sudoku\033[0m\n")
 		return
 	}
@@ -71,9 +71,9 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 					// YE4H !!! It's done
 					fmt.Println("\033[H\033[2J")	
 					fmt.Println("\n\033[33mBefore : \033[0m\n")
-					printSudoku(sudokuBefore)
+					printSudoku(sudokuBefore, Coord{100,100})
 					fmt.Println("\n\033[32mSolution : \033[0m\n")
-					printSudoku(sudoku)
+					printSudoku(sudoku, Coord{100,100})
 					return // Stop
 				}
 				break // Stop the for because the sudoku is valid
@@ -90,12 +90,12 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 	// TimeLaps
 	if(timeLaps != -1) {
 		if(back == true){
-			printSudokuTimeLaps(sudoku, coord[position])
+			printSudoku(sudoku, coord[position])
 		}else {
 			if(wasBack == true){
-				printSudokuTimeLaps(sudoku, coord[position])	
+				printSudoku(sudoku, coord[position])	
 			}else {
-				printSudokuTimeLaps(sudoku, coord[position-1])
+				printSudoku(sudoku, coord[position-1])
 			}
 		}
 		time.Sleep(time.Duration(timeLaps) * time.Millisecond)	
@@ -284,53 +284,7 @@ func checkCases(sudoku Sudoku) bool {
 
 //--------PRINT
 
-func printSudoku(sudoku Sudoku) {
-	line := ""
-	for indexY, valueY := range sudoku.grid {
-		if indexY == 0 {
-			line += "╔═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╦═══╗"
-			fmt.Println(line)
-			line = ""
-		}
-
-		if(indexY == 3 || indexY == 6){		
-    		line += "╠═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╣"
-			fmt.Println(line)
-			line = ""
-		}
-		for indexX, valueX := range valueY {
-			if indexX == 0 {
-				line += "║"
-			}
-			if(indexX == 3 || indexX == 6) {
-				line += "║"
-			}
-
-			if valueX != 0 {
-				line += " " + strconv.Itoa(valueX) + " "
-			}else {
-				line += " ░ "
-			}
-
-			if (indexX != 2 && indexX != 5 && indexX != 8) {
-				line += "│"
-			}
-		}
-		line += "║"
-		fmt.Println(line)
-		line = ""
-		if (indexY != 2 && indexY != 5 && indexY != 8) {
-			line += "╠───┼───┼───╬───┼───┼───╬───┼───┼───╣"
-			fmt.Println(line)
-			line = ""
-		}
-	}
-	line += "╚═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╝"
-	fmt.Println(line)
-}
-
-
-func printSudokuTimeLaps(sudoku Sudoku, coord Coord) {
+func printSudoku(sudoku Sudoku, coord Coord) {
 	line := ""
 	for indexY, valueY := range sudoku.grid {
 		if indexY == 0 {
@@ -354,7 +308,7 @@ func printSudokuTimeLaps(sudoku Sudoku, coord Coord) {
 
 			if valueX != 0 {
 				line += " "
-				if(indexY == coord.y && indexX == coord.x){
+				if(coord.x != 100 && (indexY == coord.y && indexX == coord.x)){
 					line += "\033[31m" + strconv.Itoa(valueX) + "\033[0m"
 				}else {
 					line += strconv.Itoa(valueX)
