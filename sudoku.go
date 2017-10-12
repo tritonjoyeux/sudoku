@@ -43,81 +43,6 @@ type Coord struct {
 	x int
 }
 
-//-------SOLVE
-
-func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {	
-	fmt.Println("\033[H\033[2J") // Clear
-	var wasBack = false // Use to print the sudoku
-	// Solver
-	if(position == -1){ // Impossible sudoku
-		printSudoku(sudokuBefore, Coord{100,100})
-		fmt.Println("\n\033[31mThere is no solution for this sudoku\033[0m\n")
-		return
-	}
-	if(sudoku.grid[coord[position].y][coord[position].x] == 9 && back == true) { // If the lastest action was back and the value is 9
-		sudoku.grid[coord[position].y][coord[position].x] = 0
-		back = false
-		wasBack = true
-		position--
-	}else if(isSudokuValid(sudoku)){
-		var start = sudoku.grid[coord[position].y][coord[position].x] // This is the value of the cell
-		var check = 0 // This is the value of the incrementation
-
-		for i := start+1; i <= 9; i++ { // Start at the value of the cell +1
-			check = i
-			sudoku.grid[coord[position].y][coord[position].x] = i // The cell take the value of the incrementation
-			if(isSudokuValid(sudoku)){ // Means that the sodoku is good : let's take another one
-				if(position == len(coord) - 1) {
-					// YE4H !!! It's done
-					fmt.Println("\033[H\033[2J")	
-					fmt.Println("\n\033[33mBefore : \033[0m\n")
-					printSudoku(sudokuBefore, Coord{100,100})
-					fmt.Println("\n\033[32mSolution : \033[0m\n")
-					printSudoku(sudoku, Coord{100,100})
-					return // Stop
-				}
-				break // Stop the for because the sudoku is valid
-			}
-		}
-		if(check == 9 && !isSudokuValid(sudoku)){ // Means that the sudoku is not good : let's go back
-			back = true
-			sudoku.grid[coord[position].y][coord[position].x] = 0	
-			position--
-		}else { // Good
-			position++	
-		}
-	}
-	// TimeLaps
-	if(timeLaps != -1) {
-		if(back == true){
-			printSudoku(sudoku, coord[position])
-		}else {
-			if(wasBack == true){
-				printSudoku(sudoku, coord[position])	
-			}else {
-				printSudoku(sudoku, coord[position-1])
-			}
-		}
-		time.Sleep(time.Duration(timeLaps) * time.Millisecond)	
-	}
-	// Recursiv
-	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps) 
-}
-
-//-------COORD
-
-func getChangeableCoordinates(sudoku Sudoku) []Coord {
-	var coord []Coord
-	for y := 0; y < 9; y++ {
-		for x := 0; x < 9; x++ {
-			if(sudoku.grid[y][x] == 0){
-				coord = append(coord, Coord{y, x})
-			}
-		}
-	}
-	return coord
-}
-
 //-------MANUALY
 
 func populateManualy(sudoku Sudoku) Sudoku {
@@ -280,6 +205,81 @@ func checkCases(sudoku Sudoku) bool {
 		}
 	}
 	return true
+}
+
+//-------SOLVE
+
+func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {	
+	fmt.Println("\033[H\033[2J") // Clear
+	var wasBack = false // Use to print the sudoku
+	// Solver
+	if(position == -1){ // Impossible sudoku
+		printSudoku(sudokuBefore, Coord{100,100})
+		fmt.Println("\n\033[31mThere is no solution for this sudoku\033[0m\n")
+		return
+	}
+	if(sudoku.grid[coord[position].y][coord[position].x] == 9 && back == true) { // If the lastest action was back and the value is 9
+		sudoku.grid[coord[position].y][coord[position].x] = 0
+		back = false
+		wasBack = true
+		position--
+	}else if(isSudokuValid(sudoku)){
+		var start = sudoku.grid[coord[position].y][coord[position].x] // This is the value of the cell
+		var check = 0 // This is the value of the incrementation
+
+		for i := start+1; i <= 9; i++ { // Start at the value of the cell +1
+			check = i
+			sudoku.grid[coord[position].y][coord[position].x] = i // The cell take the value of the incrementation
+			if(isSudokuValid(sudoku)){ // Means that the sodoku is good : let's take another one
+				if(position == len(coord) - 1) {
+					// YE4H !!! It's done
+					fmt.Println("\033[H\033[2J")	
+					fmt.Println("\n\033[33mBefore : \033[0m\n")
+					printSudoku(sudokuBefore, Coord{100,100})
+					fmt.Println("\n\033[32mSolution : \033[0m\n")
+					printSudoku(sudoku, Coord{100,100})
+					return // Stop
+				}
+				break // Stop the for because the sudoku is valid
+			}
+		}
+		if(check == 9 && !isSudokuValid(sudoku)){ // Means that the sudoku is not good : let's go back
+			back = true
+			sudoku.grid[coord[position].y][coord[position].x] = 0	
+			position--
+		}else { // Good
+			position++	
+		}
+	}
+	// TimeLaps
+	if(timeLaps != -1) {
+		if(back == true){
+			printSudoku(sudoku, coord[position])
+		}else {
+			if(wasBack == true){
+				printSudoku(sudoku, coord[position])	
+			}else {
+				printSudoku(sudoku, coord[position-1])
+			}
+		}
+		time.Sleep(time.Duration(timeLaps) * time.Millisecond)	
+	}
+	// Recursiv
+	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps) 
+}
+
+//-------COORD
+
+func getChangeableCoordinates(sudoku Sudoku) []Coord {
+	var coord []Coord
+	for y := 0; y < 9; y++ {
+		for x := 0; x < 9; x++ {
+			if(sudoku.grid[y][x] == 0){
+				coord = append(coord, Coord{y, x})
+			}
+		}
+	}
+	return coord
 }
 
 //--------PRINT
