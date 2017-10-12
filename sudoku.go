@@ -8,20 +8,104 @@ import(
 )
 
 func main() {
-	fmt.Println("\033[H\033[2J")
+	fmt.Println("\033[H\033[2J") // Clear
 	sudoku := Sudoku{}
-	//sudoku = populateRandomly(sudoku)
-	sudoku = populateManualy(sudoku)
-	printSudoku(sudoku)
-	if(isSudokuValid(sudoku)) {
-		fmt.Println("\n\033[32mThis sudoku is valid\033[0m\n")
+	
+	//sudoku = populateRandomly(sudoku) // Randomly generate the sudoku
+	sudoku = populateManualy(sudoku) // You can change it in the func populateManualy
+
+	if(!isSudokuValid(sudoku)) { 
+		printSudoku(sudoku)
+		fmt.Println("\033[31mThe sudoku is not valid\033[0m")		
 	}else {
-		fmt.Println("\n\033[31mThis sudoku is not valid\033[0m\n")
+		var coord = getChangeableCoordinates(sudoku) // Search all 0 in the grid
+
+		start := time.Now()
+		//solveSudoku(Sudoku,
+		//			 []Coord,
+		//			 position #must be 0#, back #must be false#,
+		//			 Sudoku #it'll not change#,
+		//			 timeLaps #time in Millisecond or -1 for no timelaps#)
+		solveSodoku(sudoku, coord, 0, false, sudoku, -1)
+		elapsed := time.Since(start) // Time spend by solveSudoku
+
+		fmt.Println("\033[31mThe solver took", elapsed)
+		fmt.Println("\033[0m")
 	}
 }
 
 type Sudoku struct {
 	grid [9][9] int
+}
+
+type Coord struct {
+	y int
+	x int
+}
+
+//-------SOLVE
+
+func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {
+	// TimeLaps
+	if(timeLaps != -1) {
+		fmt.Println("\033[H\033[2J")
+		printSudoku(sudoku)
+		time.Sleep(time.Duration(timeLaps) * time.Millisecond)	
+	}
+	
+	// Solver
+	if(position == -1){ // Impossible sudoku
+		printSudoku(sudokuBefore)
+		fmt.Println("\n\033[31mThere is no solution for this sudoku\033[0m\n")
+		return
+	}
+	if(sudoku.grid[coord[position].y][coord[position].x] == 9 && back == true) { // If the lastest action was back and the value is 9
+		sudoku.grid[coord[position].y][coord[position].x] = 0
+		back = false
+		position--
+	}else if(isSudokuValid(sudoku)){
+		var start = sudoku.grid[coord[position].y][coord[position].x] // This is the value of the cell
+		var check = 0 // This is the value of the incrementation
+
+		for i := start+1; i <= 9; i++ { // Start at the value of the cell +1
+			check = i
+			sudoku.grid[coord[position].y][coord[position].x] = i // The cell take the value of the incrementation
+			if(isSudokuValid(sudoku)){ // Means that the sodoku is good : let's take another one
+				if(position == len(coord) - 1) {
+					// YE4H !!! It's done
+					fmt.Println("\033[H\033[2J")	
+					fmt.Println("\n\033[33mBefore : \033[0m\n")
+					printSudoku(sudokuBefore)
+					fmt.Println("\n\033[32mSolution : \033[0m\n")
+					printSudoku(sudoku)
+					return // Stop
+				}
+				break // Stop the for
+			}
+		}
+		if(check == 9 && !isSudokuValid(sudoku)){ // Means that the sudoku is not good : let's go back
+			back = true
+			sudoku.grid[coord[position].y][coord[position].x] = 0	
+			position--
+		}else { // Good
+			position++	
+		}
+	}
+	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps) // Recursiv
+}
+
+//-------COORD
+
+func getChangeableCoordinates(sudoku Sudoku) []Coord {
+	var coord []Coord
+	for y := 0; y < 9; y++ {
+		for x := 0; x < 9; x++ {
+			if(sudoku.grid[y][x] == 0){
+				coord = append(coord, Coord{y, x})
+			}
+		}
+	}
+	return coord
 }
 
 //-------MANUALY
@@ -30,13 +114,13 @@ func populateManualy(sudoku Sudoku) Sudoku {
 	sudoku.grid =  [9][9] int{
 		{5,3,0/*|*/,0,7,0/*|*/,0,0,0},
 		{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
-		{4,9,8/*|*/,0,0,0/*|*/,0,6,0},
+		{0,9,8/*|*/,0,0,0/*|*/,0,6,0},
 		//---------------------------
 		{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
-		{0,0,0/*|*/,8,0,3/*|*/,0,0,1},
+		{4,0,0/*|*/,8,0,3/*|*/,0,0,1},
 		{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
 		//---------------------------
-		{0,6,0/*|*/,0,0,0/*|*/,0,8,0},
+		{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
 		{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
 		{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
 	return sudoku
@@ -47,10 +131,7 @@ func populateManualy(sudoku Sudoku) Sudoku {
 func populateRandomly(sudoku Sudoku) Sudoku {
 	for indexX, valueX := range sudoku.grid {
 		for indexY, _ := range valueX {
-			rand := random(1, 9)
-			if (rand == 4) {
-				sudoku.grid[indexX][indexY] = random(1, 9)
-			}
+			sudoku.grid[indexX][indexY] = random(1, 9)
 		}
 	}
 	return sudoku
@@ -64,11 +145,16 @@ func random(min, max int) int {
 //--------CHECK
 
 func isSudokuValid(sudoku Sudoku) bool {
-	return checkHorizontaly(sudoku) && checkVerticaly(sudoku) && checkCases(sudoku)
+	return checkHorizontaly(sudoku) && checkVerticaly(sudoku) && checkCases(sudoku) // Check the 3 possibilities
 }
 
 func checkHorizontaly(sudoku Sudoku) bool {
-	values := [9] int{0,0,0,0,0,0,0,0,0}
+	/* 
+	For on y axe then x axe and check if there is 2 values
+	If it is then return false
+	If it is not continue on the next y axe
+	*/
+	var values []int
 	for y := 0; y < 9; y++ {
 		for x := 0; x < 9; x++ {
 			if sudoku.grid[y][x] != 0 {
@@ -77,16 +163,21 @@ func checkHorizontaly(sudoku Sudoku) bool {
 						return false
 					} 
 				}
-				values[x] = sudoku.grid[y][x]
+				values = append(values, sudoku.grid[y][x])
 			}
 		}
-		values = [9] int{0,0,0,0,0,0,0,0,0}
+		values = nil
 	}
 	return true
 }
 
 func checkVerticaly(sudoku Sudoku) bool {
-	values := [9] int{0,0,0,0,0,0,0,0,0}
+	/* 
+	For on x axe then y axe and check if there is 2 same values
+	If it is then return false
+	If it is not continue on the next x axe
+	*/
+	var values []int
 	for x := 0; x < 9; x++ {
 		for y := 0; y < 9; y++ {
 			if sudoku.grid[y][x] != 0 {
@@ -95,20 +186,44 @@ func checkVerticaly(sudoku Sudoku) bool {
 						return false
 					} 
 				}
-				values[y] = sudoku.grid[y][x]
+				values = append(values, sudoku.grid[y][x])
 			}
 		}
-		values = [9] int{0,0,0,0,0,0,0,0,0}
+		values = nil
 	}
 	return true
 }
 
 func checkCases(sudoku Sudoku) bool {
-	inc := 0
-	values := [9] int{0,0,0,0,0,0,0,0,0}
+	/* 
+	Check 3 by 3
+
+	1OO|2OO|3OO
+	OOO|OOO|OOO
+	OOO|OOO|OOO
+	-----------
+	4OO|5OO|6OO
+	OOO|OOO|OOO
+	OOO|OOO|OOO
+	-----------
+	7OO|8OO|9OO
+	OOO|OOO|OOO
+	OOO|OOO|OOO
+
+	1-9 is where we start
+	Then we check all the case in this order
+	
+	123
+	456
+	789
+
+	Then check if there no 2 same values
+	If it is then return false
+	If it is not continue on the next case
+	*/
+	var values []int
 	for y := 0; y < 9; y = y+3 {
 		for x := 0; x < 9; x = x+3 {
-			inc = 0
 			for i := 0; i < 3; i++ {
 				for j := 0; j < 3; j++ {
 					if sudoku.grid[y+i][x+j] != 0 {
@@ -117,12 +232,11 @@ func checkCases(sudoku Sudoku) bool {
 								return false
 							} 
 						}
-						values[inc] = sudoku.grid[y+i][x+j]
+						values = append(values, sudoku.grid[y+i][x+j])
 					}
-					inc++
 				}
 			}
-			values = [9] int{0,0,0,0,0,0,0,0,0}	
+			values = nil
 		}
 	}
 	return true
