@@ -110,7 +110,9 @@ func populateManualy(sudoku Sudoku) Sudoku {
 func populateRandomly(sudoku Sudoku) Sudoku {
 	for indexX, valueX := range sudoku.grid {
 		for indexY, _ := range valueX {
-			sudoku.grid[indexX][indexY] = random(1, 9)
+			if(random(1,10) == 4) {
+				sudoku.grid[indexX][indexY] = random(1, 9)	
+			}
 		}
 	}
 	return sudoku
@@ -124,7 +126,17 @@ func random(min, max int) int {
 //--------CHECK
 
 func isSudokuValid(sudoku Sudoku) bool {
-	return checkHorizontaly(sudoku) && checkVerticaly(sudoku) && checkCases(sudoku) // Check the 3 possibilities
+	//return checkHorizontaly(sudoku) && checkVerticaly(sudoku) && checkCases(sudoku) // Check the 3 possibilities
+	if(!checkHorizontaly(sudoku)) {
+		return false
+	}
+	if(!checkVerticaly(sudoku)) {
+		return false
+	}
+	if(!checkCases(sudoku)) {
+		return false
+	}
+	return true
 }
 
 func checkHorizontaly(sudoku Sudoku) bool {
@@ -224,7 +236,6 @@ func checkCases(sudoku Sudoku) bool {
 //-------SOLVE
 
 func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {	
-	fmt.Println("\033[H\033[2J") // Clear
 	var wasBack = false // Use to print the sudoku
 	// Solver
 	if(position == -1){ // Impossible sudoku
@@ -267,6 +278,7 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 	}
 	// TimeLaps
 	if(timeLaps != -1) {
+		fmt.Println("\033[H\033[2J") // Clear
 		if(back == true){
 			printSudoku(sudoku, coord[position])
 		}else {
