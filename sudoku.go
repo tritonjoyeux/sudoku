@@ -5,6 +5,7 @@ import(
 	"math/rand"
 	"strconv"
 	"time"
+	"os"
 )
 
 func main() {
@@ -26,7 +27,19 @@ func main() {
 		//			 position #must be 0#, back #must be false#,
 		//			 Sudoku #it'll not change#,
 		//			 timeLaps #time in Millisecond or -1 for no timelaps#)
-		solveSodoku(sudoku, coord, 0, false, sudoku, -1)
+		timeLaps := -1
+
+		if(len(os.Args) != 1){
+			argTL, err := strconv.Atoi(os.Args[1])			
+			if(err == nil){			
+				timeLaps = argTL
+			}
+		}
+
+		position := 0
+		back := false
+
+		solveSodoku(sudoku, coord, position, back, sudoku, timeLaps)
 		elapsed := time.Since(start) // Time spend by solveSudoku
 
 		fmt.Println("The solver function took\033[31m", elapsed)
@@ -336,7 +349,12 @@ func printSudoku(sudoku Sudoku, coord interface{}) {
 				line += " "
 				switch coord.(type) {
                     case Coord:
-                        line += "\033[31m" + strconv.Itoa(valueX) + "\033[0m"
+                    	coord2 := coord.(Coord)
+                    	if(coord2.x == indexX && coord2.y == indexY){
+                     	  	line += "\033[31m" + strconv.Itoa(valueX) + "\033[0m"
+                    	}else {
+                    		line += strconv.Itoa(valueX)	
+                    	}
                     default:
                         line += strconv.Itoa(valueX)
             	}
