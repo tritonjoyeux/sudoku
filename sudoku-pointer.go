@@ -13,7 +13,7 @@ func main() {
 
 	//sudoku = populateRandomly(sudoku) // Randomly generate the sudoku
 	populateManualy(&sudoku) // You can change it in the func populateManualy
-
+	sudokuBefore := sudoku
 	if !isSudokuValid(&sudoku) {
 		printSudoku(&sudoku, false)
 		fmt.Println("\033[31mThe sudoku is not valid\033[0m")
@@ -29,7 +29,7 @@ func main() {
 		timeLaps := -1
 		position := 0
 		back := false
-		solveSodoku(&sudoku, coord, &position, &back, &sudoku, &timeLaps)
+		solveSodoku(&sudoku, coord, &position, &back, &sudokuBefore, &timeLaps)
 		elapsed := time.Since(start) // Time spend by solveSudoku
 
 		fmt.Println("The solver function took\033[31m", elapsed)
