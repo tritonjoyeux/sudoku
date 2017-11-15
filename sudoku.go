@@ -15,19 +15,19 @@ func main() {
 			fmt.Println("\033[31mUsage\033[0m : go run \033[32mfile\033[0m \033[32mtimeLaps\033[0m \033[32mtype\033[0m\n")
 			fmt.Println("\033[32mfile\033[0m is the file you selected (\033[33msudoku.go\033[0m or \033[33msudoku-pointer.go\033[0m)")
 			fmt.Println("\033[32mtimeLaps\033[0m is the intervall in milliSecond (\033[33m-1\033[0m is default and for no timeLaps)")
-			fmt.Println("\033[32mtype\033[0m is the type of the sudoku (\033[33measy\033[0m is default and you have \033[33measy\033[0m, \033[33mhard\033[0m, \033[33mimp\033[0m (impossible), \033[33mng\033[0m (not good) choices)\n")			
-			os.Exit(0)			
+			fmt.Println("\033[32mtype\033[0m is the type of the sudoku (\033[33measy\033[0m is default and you have \033[33measy\033[0m, \033[33mhard\033[0m, \033[33mimp\033[0m (impossible), \033[33mng\033[0m (not good) choices)\n")
+			os.Exit(0)
 		}
 	}
-	
+
 	sudoku := Sudoku{}
-	
+
 	//sudoku = populateRandomly(sudoku) // Randomly generate the sudoku
 	sudoku = populateManualy(sudoku) // You can change it in the func populateManualy
 
-	if(!isSudokuValid(sudoku)) { 
+	if(!isSudokuValid(sudoku)) {
 		printSudoku(sudoku, false)
-		fmt.Println("\033[31mThe sudoku is not valid\033[0m")		
+		fmt.Println("\033[31mThe sudoku is not valid\033[0m")
 	}else {
 		var coord = getChangeableCoordinates(sudoku) // Search all 0 in the grid
 
@@ -40,8 +40,8 @@ func main() {
 		timeLaps := -1
 
 		if(len(os.Args) != 1){
-			argTL, err := strconv.Atoi(os.Args[1])			
-			if(err == nil){			
+			argTL, err := strconv.Atoi(os.Args[1])
+			if(err == nil){
 				timeLaps = argTL
 			}
 		}
@@ -69,7 +69,7 @@ type Coord struct {
 //-------MANUALY
 
 func populateManualy(sudoku Sudoku) Sudoku {
-	if(len(os.Args) != 2){						
+	if(len(os.Args) != 2){
 		switch os.Args[2] {
 			case "easy":
 				// Good easy
@@ -167,7 +167,7 @@ func populateRandomly(sudoku Sudoku) Sudoku {
 	for indexX, valueX := range sudoku.grid {
 		for indexY, _ := range valueX {
 			if(random(1,10) == 4) {
-				sudoku.grid[indexX][indexY] = random(1, 9)	
+				sudoku.grid[indexX][indexY] = random(1, 9)
 			}
 		}
 	}
@@ -196,7 +196,7 @@ func isSudokuValid(sudoku Sudoku) bool {
 }
 
 func checkHorizontaly(sudoku Sudoku) bool {
-	/* 
+	/*
 	For on y axe then x axe and check if there is 2 values
 	If it is then return false
 	If it is not continue on the next y axe
@@ -208,7 +208,7 @@ func checkHorizontaly(sudoku Sudoku) bool {
 				for _, value := range values {
 					if value == sudoku.grid[y][x] {
 						return false
-					} 
+					}
 				}
 				values = append(values, sudoku.grid[y][x])
 			}
@@ -219,7 +219,7 @@ func checkHorizontaly(sudoku Sudoku) bool {
 }
 
 func checkVerticaly(sudoku Sudoku) bool {
-	/* 
+	/*
 	For on x axe then y axe and check if there is 2 same values
 	If it is then return false
 	If it is not continue on the next x axe
@@ -231,7 +231,7 @@ func checkVerticaly(sudoku Sudoku) bool {
 				for _, value := range values {
 					if value == sudoku.grid[y][x] {
 						return false
-					} 
+					}
 				}
 				values = append(values, sudoku.grid[y][x])
 			}
@@ -242,7 +242,7 @@ func checkVerticaly(sudoku Sudoku) bool {
 }
 
 func checkCases(sudoku Sudoku) bool {
-	/* 
+	/*
 	Check 3 by 3
 
 	1OO|2OO|3OO
@@ -259,7 +259,7 @@ func checkCases(sudoku Sudoku) bool {
 
 	1-9 is where we start
 	Then we check all the case in this order
-	
+
 	123
 	456
 	789
@@ -277,7 +277,7 @@ func checkCases(sudoku Sudoku) bool {
 						for _, value := range values {
 							if value == sudoku.grid[y+i][x+j] {
 								return false
-							} 
+							}
 						}
 						values = append(values, sudoku.grid[y+i][x+j])
 					}
@@ -291,7 +291,7 @@ func checkCases(sudoku Sudoku) bool {
 
 //-------SOLVE
 
-func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {	
+func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBefore Sudoku, timeLaps int) {
 	var wasBack = false // Use to print the sudoku
 	// Solver
 	if(position == -1){ // Impossible sudoku
@@ -314,7 +314,7 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 			if(isSudokuValid(sudoku)){ // Means that the sodoku is good : let's take another one
 				if(position == len(coord) - 1) {
 					// YE4H !!! It's done
-					fmt.Println("\033[H\033[2J")	
+					fmt.Println("\033[H\033[2J")
 					fmt.Println("\n\033[33mBefore : \033[0m\n")
 					printSudoku(sudokuBefore, false)
 					fmt.Println("\n\033[32mSolution : \033[0m\n")
@@ -326,10 +326,10 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 		}
 		if(check == 9 && !isSudokuValid(sudoku)){ // Means that the sudoku is not good : let's go back
 			back = true
-			sudoku.grid[coord[position].y][coord[position].x] = 0	
+			sudoku.grid[coord[position].y][coord[position].x] = 0
 			position--
 		}else { // Good
-			position++	
+			position++
 		}
 	}
 	// TimeLaps
@@ -339,15 +339,15 @@ func solveSodoku(sudoku Sudoku, coord []Coord, position int, back bool, sudokuBe
 			printSudoku(sudoku, coord[position])
 		}else {
 			if(wasBack == true){
-				printSudoku(sudoku, coord[position])	
+				printSudoku(sudoku, coord[position])
 			}else {
 				printSudoku(sudoku, coord[position-1])
 			}
 		}
-		time.Sleep(time.Duration(timeLaps) * time.Millisecond)	
+		time.Sleep(time.Duration(timeLaps) * time.Millisecond)
 	}
 	// Recursiv
-	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps) 
+	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps)
 }
 
 //-------COORD
@@ -375,7 +375,7 @@ func printSudoku(sudoku Sudoku, coord interface{}) {
 			line = ""
 		}
 
-		if(indexY == 3 || indexY == 6){		
+		if(indexY == 3 || indexY == 6){
     		line += "╠═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╬═══╣"
 			fmt.Println(line)
 			line = ""
@@ -396,7 +396,7 @@ func printSudoku(sudoku Sudoku, coord interface{}) {
                     	if(coord2.x == indexX && coord2.y == indexY){
                      	  	line += "\033[31m" + strconv.Itoa(valueX) + "\033[0m"
                     	}else {
-                    		line += strconv.Itoa(valueX)	
+                    		line += strconv.Itoa(valueX)
                     	}
                     default:
                         line += strconv.Itoa(valueX)

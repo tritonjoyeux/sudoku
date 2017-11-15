@@ -6,7 +6,15 @@ import (
 	"strconv"
 	"time"
 	"os"
+	"io/ioutil"
 )
+
+var timeLaps = -1
+var back = false
+var coord []Coord
+var listSudoku []Sudoku
+var sudoku Sudoku
+const path = "./example/"
 
 func main() {
 	fmt.Println("\033[H\033[2J") // Clear
@@ -15,46 +23,36 @@ func main() {
 			fmt.Println("\033[31mUsage\033[0m : go run \033[32mfile\033[0m \033[32mtimeLaps\033[0m \033[32mtype\033[0m\n")
 			fmt.Println("\033[32mfile\033[0m is the file you selected (\033[33msudoku.go\033[0m or \033[33msudoku-pointer.go\033[0m)")
 			fmt.Println("\033[32mtimeLaps\033[0m is the intervall in milliSecond (\033[33m-1\033[0m is default and for no timeLaps)")
-			fmt.Println("\033[32mtype\033[0m is the type of the sudoku (\033[33measy\033[0m is default and you have \033[33measy\033[0m, \033[33mhard\033[0m, \033[33mimp\033[0m (impossible), \033[33mng\033[0m (not good) choices)\n")			
-			os.Exit(0)			
+			return
 		}
 	}
 
-	sudoku := Sudoku{}
-	
-	//sudoku = populateRandomly(sudoku) // Randomly generate the sudoku
-	populateManualy(&sudoku) // You can change it in the func populateManualy
-	sudokuBefore := sudoku
-	
-	if !isSudokuValid(&sudoku) {
-		printSudoku(&sudoku, false)
-		fmt.Println("\033[31mThe sudoku is not valid\033[0m")
-	} else {
-		var coord = getChangeableCoordinates(&sudoku) // Search all 0 in the grid
+	sudoku = Sudoku{}
+	populateManualy() // You can change it in the func populateManualy
 
-		start := time.Now()
-		//solveSudoku(Sudoku,
-		//			 []Coord,
-		//			 position #must be 0#, back #must be false#,
-		//			 Sudoku #it'll not change#,
-		//			 timeLaps #time in Millisecond or -1 for no timelaps#)
-		timeLaps := -1
-
-		if(len(os.Args) != 1){
-			argTL, err := strconv.Atoi(os.Args[1])			
-			if(err == nil){			
-				timeLaps = argTL
-			}
-		}
-
-		position := 0
-		back := false
-		solveSodoku(&sudoku, coord, &position, &back, &sudokuBefore, &timeLaps)
-		elapsed := time.Since(start) // Time spend by solveSudoku
-
-		fmt.Println("The solver function took\033[31m", elapsed)
-		fmt.Println("\033[0m")
+	for _, sudoo := range listSudoku {
+		sudoku = sudoo
+		doWhatYouWantToDo()
+		//printSudoku(&sudoku, false)
 	}
+}
+
+func doWhatYouWantToDo() {
+	getChangeableCoordinates() // Search all 0 in the grid
+
+	if(len(os.Args) != 1){
+		argTL, err := strconv.Atoi(os.Args[1])
+		if(err == nil){
+			timeLaps = argTL
+		}
+	}
+
+	start := time.Now()
+	solveSodoku(0)
+	elapsed := time.Since(start) // Time spend by solveSudoku
+
+	fmt.Println("The solver function took\033[31m", elapsed)
+	fmt.Println("\033[0m")
 }
 
 type Sudoku struct {
@@ -68,94 +66,42 @@ type Coord struct {
 
 //-------MANUALY
 
-func populateManualy(sudoku *Sudoku) {
-	if(len(os.Args) != 2){						
-		switch os.Args[2] {
-			case "easy":
-				// Good easy
-				sudoku.grid = [9][9]int{
-					{5,3,0/*|*/,0,7,0/*|*/,0,0,0},
-					{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
-					{0,9,8/*|*/,0,0,0/*|*/,0,6,0},
-					//---------------------------
-					{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
-					{4,0,0/*|*/,8,0,3/*|*/,0,0,1},
-					{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
-					//---------------------------
-					{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
-					{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
-					{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
-			case "hard":
-				// DEAMON
-				sudoku.grid = [9][9] int{
-					{0,0,0/*|*/,0,0,9/*|*/,1,0,0},
-					{0,0,9/*|*/,0,3,0/*|*/,5,0,0},
-					{0,1,0/*|*/,0,0,6/*|*/,0,7,9},
-					//---------------------------
-					{0,0,0/*|*/,0,6,0/*|*/,3,0,8},
-					{0,9,0/*|*/,3,0,7/*|*/,0,1,0},
-					{1,0,6/*|*/,0,4,0/*|*/,0,0,0},
-					//---------------------------
-					{7,6,0/*|*/,4,0,0/*|*/,0,2,0},
-					{0,0,8/*|*/,0,1,0/*|*/,9,0,0},
-					{0,0,2/*|*/,7,0,0/*|*/,0,0,0}}
-			case "imp":
-				// Impossible
-				sudoku.grid =  [9][9] int{
-					{5,3,0/*|*/,0,7,0/*|*/,0,0,0},
-					{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
-					{4,9,8/*|*/,0,0,0/*|*/,0,6,0},
-					//---------------------------
-					{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
-					{0,0,0/*|*/,8,0,3/*|*/,0,0,1},
-					{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
-					//---------------------------
-					{0,6,0/*|*/,0,0,0/*|*/,0,8,0},
-					{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
-					{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
-			case "ng":
-				// Not good
-				sudoku.grid =  [9][9] int{
-					{5,3,0/*|*/,0,7,0/*|*/,0,0,7},
-					{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
-					{0,9,8/*|*/,0,0,0/*|*/,0,6,0},
-					//---------------------------
-					{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
-					{4,0,0/*|*/,8,0,3/*|*/,0,0,1},
-					{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
-					//---------------------------
-					{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
-					{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
-					{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
-			default:
-				// Good easy
-				sudoku.grid = [9][9]int{
-					{5,3,0/*|*/,0,7,0/*|*/,0,0,0},
-					{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
-					{0,9,8/*|*/,0,0,0/*|*/,0,6,0},
-					//---------------------------
-					{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
-					{4,0,0/*|*/,8,0,3/*|*/,0,0,1},
-					{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
-					//---------------------------
-					{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
-					{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
-					{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
+func populateManualy() {
+	files, err := ioutil.ReadDir(path)
+    if err != nil {
+		fmt.Println("err")
+        os.Exit(0)
+    }
+
+    for _, f := range files {
+        content, err := ioutil.ReadFile(path + f.Name())
+		if err != nil {
+			fmt.Println("err")
+			os.Exit(0)
 		}
-	}else {
-	// Good easy
-	sudoku.grid = [9][9]int{
-		{5,3,0/*|*/,0,7,0/*|*/,0,0,0},
-		{6,0,0/*|*/,1,9,5/*|*/,0,0,0},
-		{0,9,8/*|*/,0,0,0/*|*/,0,6,0},
-		//---------------------------
-		{8,0,0/*|*/,0,6,0/*|*/,0,0,3},
-		{4,0,0/*|*/,8,0,3/*|*/,0,0,1},
-		{7,0,0/*|*/,0,2,0/*|*/,0,0,6},
-		//---------------------------
-		{0,6,0/*|*/,0,0,0/*|*/,2,8,0},
-		{0,0,0/*|*/,4,1,9/*|*/,0,0,5},
-		{0,0,0/*|*/,0,8,0/*|*/,0,7,9}}
+
+		sudoku = Sudoku{}
+		x := 0
+		y := 0
+
+		for _, ch := range content{
+			str := string(ch)
+			if(str == "."){
+				sudoku.grid[y][x] = 0
+			}else if str != "\n" {
+				sudoku.grid[y][x], err = strconv.Atoi(str)
+				if err != nil {
+					fmt.Println("err")
+				}
+			}
+			if(x > 8){
+				x = 0
+				y = y+1
+			}else {
+				x = x+1
+			}
+		}
+		listSudoku = append(listSudoku, sudoku)
 	}
 }
 
@@ -178,26 +124,20 @@ func random(min, max int) int {
 
 //--------CHECK
 
-func isSudokuValid(sudoku *Sudoku) bool {
-	//return checkHorizontaly(sudoku) && checkVerticaly(sudoku) && checkCases(sudoku) // Check the 3 possibilities
-	if !checkHorizontaly(sudoku) {
+func isSudokuValid() bool {
+	if !checkHorizontaly() {
 		return false
 	}
-	if !checkVerticaly(sudoku) {
+	if !checkVerticaly() {
 		return false
 	}
-	if !checkCases(sudoku) {
+	if !checkCases() {
 		return false
 	}
 	return true
 }
 
-func checkHorizontaly(sudoku *Sudoku) bool {
-	/*
-		For on y axe then x axe and check if there is 2 values
-		If it is then return false
-		If it is not continue on the next y axe
-	*/
+func checkHorizontaly() bool {
 	var values []int
 	for y := 0; y < 9; y++ {
 		for x := 0; x < 9; x++ {
@@ -215,12 +155,7 @@ func checkHorizontaly(sudoku *Sudoku) bool {
 	return true
 }
 
-func checkVerticaly(sudoku *Sudoku) bool {
-	/*
-		For on x axe then y axe and check if there is 2 same values
-		If it is then return false
-		If it is not continue on the next x axe
-	*/
+func checkVerticaly() bool {
 	var values []int
 	for x := 0; x < 9; x++ {
 		for y := 0; y < 9; y++ {
@@ -238,33 +173,7 @@ func checkVerticaly(sudoku *Sudoku) bool {
 	return true
 }
 
-func checkCases(sudoku *Sudoku) bool {
-	/*
-		Check 3 by 3
-
-		1OO|2OO|3OO
-		OOO|OOO|OOO
-		OOO|OOO|OOO
-		-----------
-		4OO|5OO|6OO
-		OOO|OOO|OOO
-		OOO|OOO|OOO
-		-----------
-		7OO|8OO|9OO
-		OOO|OOO|OOO
-		OOO|OOO|OOO
-
-		1-9 is where we start
-		Then we check all the case in this order
-
-		123
-		456
-		789
-
-		Then check if there no 2 same values
-		If it is then return false
-		If it is not continue on the next case
-	*/
+func checkCases() bool {
 	var values []int
 	for y := 0; y < 9; y = y + 3 {
 		for x := 0; x < 9; x = x + 3 {
@@ -288,69 +197,47 @@ func checkCases(sudoku *Sudoku) bool {
 
 //-------SOLVE
 
-func solveSodoku(sudoku *Sudoku, coord []Coord, position *int, back *bool, sudokuBefore *Sudoku, timeLaps *int) {
-	var wasBack = false // Use to print the sudoku
-	// Solver
-	if *position == -1 { // Impossible sudoku
-		printSudoku(sudokuBefore, false)
+func solveSodoku(position int) {
+	if position == -1 { // Impossible sudoku
 		fmt.Println("\n\033[31mThere is no solution for this sudoku\033[0m\n")
 		return
 	}
-	if sudoku.grid[coord[*position].y][coord[*position].x] == 9 && *back == true { // If the lastest action was back and the value is 9
-		sudoku.grid[coord[*position].y][coord[*position].x] = 0
-		*back = false
-		wasBack = true
-		*position--
-	} else if isSudokuValid(sudoku) {
-		var start = sudoku.grid[coord[*position].y][coord[*position].x] // This is the value of the cell
+	if sudoku.grid[coord[position].y][coord[position].x] == 9 && back == true { // If the lastest action was back and the value is 9
+		sudoku.grid[coord[position].y][coord[position].x] = 0
+		back = false
+		position--
+	} else if isSudokuValid() {
+		var start = sudoku.grid[coord[position].y][coord[position].x] // This is the value of the cell
 		var check = 0                                                 // This is the value of the incrementation
 
 		for i := start + 1; i <= 9; i++ { // Start at the value of the cell +1
 			check = i
-			sudoku.grid[coord[*position].y][coord[*position].x] = i // The cell take the value of the incrementation
-			if isSudokuValid(sudoku) {                            // Means that the sodoku is good : let's take another one
-				if *position == len(coord)-1 {
+			sudoku.grid[coord[position].y][coord[position].x] = i // The cell take the value of the incrementation
+			if isSudokuValid() {                            // Means that the sodoku is good : let's take another one
+				if position == len(coord)-1 {
 					// YE4H !!! It's done
-					fmt.Println("\033[H\033[2J")
-					fmt.Println("\n\033[33mBefore : \033[0m\n")
-					printSudoku(sudokuBefore, false)
 					fmt.Println("\n\033[32mSolution : \033[0m\n")
-					printSudoku(sudoku, false)
+					printSudoku(&sudoku, false)
 					return // Stop
 				}
 				break // Stop the for because the sudoku is valid
 			}
 		}
-		if check == 9 && !isSudokuValid(sudoku) { // Means that the sudoku is not good : let's go back
-			*back = true
-			sudoku.grid[coord[*position].y][coord[*position].x] = 0
-			*position--
+		if check == 9 && !isSudokuValid() { // Means that the sudoku is not good : let's go back
+			back = true
+			sudoku.grid[coord[position].y][coord[position].x] = 0
+			position--
 		} else { // Good
-			*position++
+			position++
 		}
-	}
-	// TimeLaps
-	if *timeLaps != -1 {
-		fmt.Println("\033[H\033[2J") // Clear
-		if *back == true {
-			printSudoku(sudoku, coord[*position])
-		} else {
-			if wasBack == true {
-				printSudoku(sudoku, coord[*position])
-			} else {
-				printSudoku(sudoku, coord[*position-1])
-			}
-		}
-		time.Sleep(time.Duration(*timeLaps) * time.Millisecond)
 	}
 	// Recursiv
-	solveSodoku(sudoku, coord, position, back, sudokuBefore, timeLaps)
+	solveSodoku(position)
 }
 
 //-------COORD
 
-func getChangeableCoordinates(sudoku *Sudoku) []Coord {
-	var coord []Coord
+func getChangeableCoordinates() {
 	for y := 0; y < 9; y++ {
 		for x := 0; x < 9; x++ {
 			if sudoku.grid[y][x] == 0 {
@@ -358,7 +245,6 @@ func getChangeableCoordinates(sudoku *Sudoku) []Coord {
 			}
 		}
 	}
-	return coord
 }
 
 //--------PRINT
@@ -393,7 +279,7 @@ func printSudoku(sudoku *Sudoku, coord interface{}) {
                     	if(coord2.x == indexX && coord2.y == indexY){
                      	  	line += "\033[31m" + strconv.Itoa(valueX) + "\033[0m"
                     	}else {
-                    		line += strconv.Itoa(valueX)	
+                    		line += strconv.Itoa(valueX)
                     	}
                     default:
                         line += strconv.Itoa(valueX)
