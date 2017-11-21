@@ -11,9 +11,8 @@ import (
 )
 
 type Sudoku struct {
-	Grid    [9][9]int
-	Name    string
-	Elapsed time.Duration
+	Grid [9][9]int
+	Name string
 }
 
 func displaySudoku(ch2 chan Sudoku, wg *sync.WaitGroup) {
@@ -65,8 +64,6 @@ func displaySudoku(ch2 chan Sudoku, wg *sync.WaitGroup) {
 		}
 		line += "╚═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╩═══╝"
 		fmt.Println(line)
-		fmt.Println("The solver function took\033[31m", base.Elapsed)
-		fmt.Println("\033[0m")
 		wg.Done()
 	}
 }
@@ -219,6 +216,7 @@ func getFolderSudoku() []Sudoku {
 const path = "./example/"
 
 func main() {
+	start := time.Now()
 	var wg sync.WaitGroup
 
 	listSudoku := getFolderSudoku()
@@ -239,16 +237,19 @@ func main() {
 		wg.Add(1)
 		ch <- base
 	}
+
 	wg.Wait()
+
+	elapsed := time.Since(start)
+	fmt.Println("The solver function took\033[31m", elapsed)
+	fmt.Println("\033[0m")
 }
 
 func threadSudoku(ch chan Sudoku, wg *sync.WaitGroup, ch2 chan Sudoku) {
 	for {
 		var base Sudoku
 		base = <-ch
-		start := time.Now()
 		base.Solve()
-		base.Elapsed = time.Since(start) // Time spend by solveSudoku
 		ch2 <- base
 	}
 }
