@@ -8,6 +8,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+	"runtime/pprof"
+	"log"
 )
 
 type Sudoku struct {
@@ -217,6 +219,15 @@ const path = "./example/"
 
 func main() {
 	start := time.Now()
+	f, err := os.Create("perf_cpu.prof")
+	if err != nil {
+		log.Fatal("could not create CPU profile: ", err)
+	}
+	if err := pprof.StartCPUProfile(f); err != nil {
+		log.Fatal("could not start CPU profile: ", err)
+	}
+	defer pprof.StopCPUProfile()
+
 	var wg sync.WaitGroup
 
 	listSudoku := getFolderSudoku()
@@ -243,6 +254,16 @@ func main() {
 	elapsed := time.Since(start)
 	fmt.Println("The solver function took\033[31m", elapsed)
 	fmt.Println("\033[0m")
+
+	f, err = os.Create("perf_mem.prof")
+	if err != nil {
+		log.Fatal("could not create memory profile: ", err)
+	}
+	runtime.GC()
+	if err := pprof.WriteHeapProfile(f); err != nil {
+		log.Fatal("could not write memory profile: ", err)
+	}
+	f.Close()
 }
 
 func threadSudoku(ch chan Sudoku, wg *sync.WaitGroup, ch2 chan Sudoku) {
