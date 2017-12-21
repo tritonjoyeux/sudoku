@@ -21,7 +21,11 @@ func displaySudoku(ch2 chan Sudoku, wg *sync.WaitGroup) {
 	for {
 		var base Sudoku
 		base = <-ch2
-
+		file, err := os.Create("./results/" + base.Name + ".txt")
+		if(err != nil) {
+			log.Fatal("could not create the result file " + base.Name + ".txt")
+		}
+		defer file.Close()
 		fmt.Println(base.Name)
 
 		line := ""
@@ -47,6 +51,7 @@ func displaySudoku(ch2 chan Sudoku, wg *sync.WaitGroup) {
 
 				if valueX != 0 {
 					line += " " + strconv.Itoa(valueX) + " "
+					fmt.Fprintf(file, strconv.Itoa(valueX))
 				} else {
 					line += " ░ "
 				}
@@ -57,6 +62,7 @@ func displaySudoku(ch2 chan Sudoku, wg *sync.WaitGroup) {
 			}
 			line += "║"
 			fmt.Println(line)
+			fmt.Fprintf(file, "\n")
 			line = ""
 			if indexY != 2 && indexY != 5 && indexY != 8 {
 				line += "╠───┼───┼───╬───┼───┼───╬───┼───┼───╣"
@@ -176,43 +182,46 @@ func (this *Sudoku) checkCoord(cy int, cx int, nVal int) bool {
 	return true
 }
 
-func getFolderSudoku() []Sudoku {
-	var listSudoku []Sudoku
-	files, err := ioutil.ReadDir(path)
-	if err != nil {
-		fmt.Println(err)
-		os.Exit(0)
-	}
-	sudoku := Sudoku{}
-	for _, f := range files {
-		content, err := ioutil.ReadFile(path + f.Name())
+func getFolderSudoku(ch chan Sudoku, wg *sync.WaitGroup, ch2 chan Sudoku, chStart chan string) {
+	for {
+		var pathGlob string
+		pathGlob = <-chStart
+
+		files, err := ioutil.ReadDir(pathGlob)
 		if err != nil {
-			fmt.Println(err)
-			os.Exit(0)
+			log.Fatal("could not read Dir " + pathGlob + ": ", err)
 		}
-
-		sudoku = Sudoku{}
-		sudoku.Name = f.Name()
-		x := 0
-		y := 0
-
-		for _, ch := range content {
-			str := string(ch)
-			if str == "." {
-				sudoku.Grid[y][x] = 0
-			} else if str != "\n" {
-				sudoku.Grid[y][x], _ = strconv.Atoi(str)
+		sudoku := Sudoku{}
+		for _, f := range files {
+			content, err := ioutil.ReadFile(pathGlob + f.Name())
+			if err != nil {
+				log.Fatal("could not read File " + f.Name() + ": ", err)
 			}
-			if x > 8 {
-				x = 0
-				y = y + 1
-			} else {
-				x = x + 1
+
+			sudoku = Sudoku{}
+			sudoku.Name = f.Name()
+			x := 0
+			y := 0
+
+			for _, ch := range content {
+				str := string(ch)
+				if str == "." {
+					sudoku.Grid[y][x] = 0
+				} else if str != "\n" {
+					sudoku.Grid[y][x], _ = strconv.Atoi(str)
+				}
+				if x > 8 {
+					x = 0
+					y = y + 1
+				} else {
+					x = x + 1
+				}
 			}
+			wg.Add(1)
+			ch <- sudoku
 		}
-		listSudoku = append(listSudoku, sudoku)
+		wg.Done()
 	}
-	return listSudoku
 }
 
 const path = "./example/"
@@ -230,7 +239,8 @@ func main() {
 
 	var wg sync.WaitGroup
 
-	listSudoku := getFolderSudoku()
+	var chStart chan string
+	chStart = make(chan string)
 
 	var ch chan Sudoku
 	ch = make(chan Sudoku)
@@ -238,17 +248,16 @@ func main() {
 	var ch2 chan Sudoku
 	ch2 = make(chan Sudoku)
 
+	go getFolderSudoku(ch, &wg, ch2, chStart)
+
 	for i := 0; i < runtime.NumCPU(); i++ {
 		go threadSudoku(ch, &wg, ch2)
 	}
 
 	go displaySudoku(ch2, &wg)
 
-	for _, base := range listSudoku {
-		wg.Add(1)
-		ch <- base
-	}
-
+	wg.Add(1)
+	chStart <- path
 	wg.Wait()
 
 	elapsed := time.Since(start)
